@@ -10,6 +10,7 @@ This has been heavily modified to :-
 * Changed user configuration file to TOML format
 * Cache all TTN parameters
 * Added flags to indicate if the system is transmitting
+* Examples and necessary tweaks for CayenneLLP / TTNMapper compliant gps co-ordinate transmission with SKY/HDOP (Horizontal Dilution of Precision) objects added.
 * added methods to get the last transmit air-time so that adherence to the LoRa duty cycle can be controlled
 
 TODO

@@ -30,6 +30,8 @@ class GPS:
 
         self.lat=None
         self.lon=None
+        self.alt=None
+        self.hdop=None
         self.timestamp=None
         self.lastGpsReading=None
 
@@ -75,8 +77,8 @@ class GPS:
             these values updated
 
         """
-        self.logger.debug(f"get_gps(): lat {self.lat}, lon {self.lon}, timestamp: {self.timestamp}")
-        return self.lat, self.lon, self.timestamp, self.lastGpsReading
+        self.logger.debug(f"get_gps(): lat {self.lat}, lon {self.lon}, alt {self.alt}, hdop {self.hdop}")
+        return self.lat, self.lon, self.alt, self.hdop
 
     def get_corrected_timestamp(self):
         """
@@ -171,7 +173,7 @@ class GPS:
 
                 # what follows will be deprecated
                 if data["class"] == "TPV":
-                    #print("TPV data",data)
+                #    print("TPV data",data)
                     if data["mode"]==0 or data["mode"]==1:
                         # no useable data or no fix
                         self.logger.info("No GPS fix (yet)")
@@ -180,11 +182,16 @@ class GPS:
                     try:
                         self.lat = data["lat"]
                         self.lon = data["lon"]
+                        self.alt = data["alt"]
                         self.timestamp = data["time"]
-                        #print(f"Got lat {self.lat} lon {self.lon}") 
+                        #print(f"Got lat {self.lat} lon {self.lon} alt {self.alt} at {self.timestamp}") 
                         self.lastGpsReading = time()
                     except KeyError as e:
                         self.logger.exception(f"unable to extract TPV data missing key error: {e}")
+                if data["class"] == "SKY":
+                    #print("SKY data",data)
+                    self.hdop = data["hdop"]
+                    print(f"Got lat {self.lat} lon {self.lon} alt {self.alt} hdop {self.hdop} at {self.timestamp}") 
                 else:
                     if VERBOSE:
                         self.logger.debug(f"GPS message was {data}")
@@ -210,11 +217,13 @@ if __name__=="__main__":
         while True:
 
             TPV=gps.getSentence("TPV")
+            SKY=gps.getSentence("SKY")
             if TPV is not None:
                 if nofix:
                     print("Got fix after",time()-start)
                     nofix=False
                     print("TPV:",TPV)
+                    print("SKY:",SKY)
 
             sleep(5)
     

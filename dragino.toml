@@ -26,7 +26,8 @@
 	mac_cache="cache.json"
 	device_class="A"			# class B & C not yet supported
 
-	frequency_plan = "EU_863_870_TTN"
+	#frequency_plan = "EU_863_870_TTN"
+	frequency_plan = "AU_915_928_FSB_2"
 
 
 	# radio settings
@@ -50,13 +51,13 @@
 	# RX1 is normally the same as the uplink settings
 	# but can be changed by MAC commands
 	rx1_delay=5
-	rx1_DR=3
+	rx1_DR=11
 	
 	
 	# In EU RX2 is normally a fixed frequency & datarate
 	# but can be modified by MAC commands
-	rx2_DR=3
-	rx2_frequency=869.525
+	rx2_DR=11
+	rx2_frequency=923.3
 	rx2_delay=1				# follows from end of rx1_delay
 	
 	rx_window=1				# duration of receive windows

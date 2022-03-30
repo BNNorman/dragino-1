@@ -38,6 +38,18 @@ The gwcnt indicates how many gateways picked up your transmission and is nice to
 
 It is also possible the server sends a status request MAC command after joining. The dragino code will handle that and add it's reply to the list of replies to be sent. If that has happened it should appear in the testMAC.log file.
 
+## gps_lpp.py
+
+A transmitter of the GPS Co-Ordinates in Cayenne LLP compliant format to TTN containing Latitude, Longtitude and Altitude values. Compatible with TTNMapper however not preferred as missing accuracy reference like HDOP, Satellites etc. Requires webhooks TTNMapper integration and selection of CayenneLLP standard decoder in TTN platform.
+
+## gps_ttnmapper.py
+
+A transmitter of more detailed GPS Co-Ordinates in TTNMapper compliant format to TTN containing Latitude, Longtitude, Altitude and HDOP (Horizontal Dilution of Precision) values. Requires within TTN use of the include javascript decoder and enablement of the webhooks TTNMapper integration. This is preferred as includes accuracy reference HDOP.
+
+## TTNv3Custom_decoder.js
+
+A javascript payload decoder to suit the gps_ttnmapper.py to process the received packet and present Latitude, Longitude, Altitude and HDOP values.
+
 # dragino folder
 
 ##/_/_init/_/_.py

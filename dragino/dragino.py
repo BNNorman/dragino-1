@@ -43,7 +43,7 @@ parentDir=os.path.dirname(currentDir)
 sys.path.append(parentDir)
 
 #################################
-DEFAULT_LOG_LEVEL = logging.DEBUG 	# Change after finishing development
+DEFAULT_LOG_LEVEL = logging.INFO 	# Change after finishing development
 DEFAULT_RETRIES = 3 				# How many attempts to send the message
 
 
@@ -67,7 +67,7 @@ class Dragino(LoRa):
     def __init__(
             self, config_filename,
             logging_level=DEFAULT_LOG_LEVEL,
-			enableGPS=False	
+			enableGPS=True
             ):
 
         self.confirmWithNextUplink=False # for confirmed data down
