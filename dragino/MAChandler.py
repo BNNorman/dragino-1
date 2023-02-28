@@ -462,9 +462,9 @@ class MAC_commands(object):
                     
         if self.config[TTN][AUTH_MODE]==OTAA:
             # NWKSKEY and APPSKEY are set after joining
-            self.cache[DEVADDR]=bytearray([0x00,0x00,0x00,0x00])
-            self.cache[APPSKEY]=bytearray()
-            self.cache[NWKSKEY]=bytearray()
+            self.cache[DEVADDR]=[0x00,0x00,0x00,0x00]
+            self.cache[APPSKEY]=[0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00]
+            self.cache[NWKSKEY]=[0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00]
 
         else:
             # ABP settings
