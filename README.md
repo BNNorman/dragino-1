@@ -63,14 +63,18 @@ Be aware that your downlink handler is called during an interrupt and should not
 I recommend you push the information onto a queue and deal with the queue in a separate thread. Having said that you
 are unlikely to experience a flood of downlinks. There is a recommended max of 10 per day with TTN.
 
-The TTN servers only send downlinks after an uplink in accordance with the LoRaWAN spec.
+The TTN servers only send downlinks after an uplink in accordance with the LoRaWAN spec so you need to setup a downlink before sending an uplink - remember that when testing.
 
 See https://www.thethingsnetwork.org/docs/lorawan/classes/ for a complete description of LoRaWAN device classes.
 
 Briefly, for class A device, downlink messages will only be sent after an uplink message. This is generally the type of device most people will be using as it consumes the least power on, for example, Arduino sensor devices. However, a Raspberry Pi + dragino HAT is constantly powered so when it isn't transmitting it can be always listening.
 
+# Crypto
+
+Added pycrypto master - instructions to install are in the zip file.
 
 # LoRaWAN
+
 This is a LoRaWAN v1.0 implementation in python for the Raspberry Pi Dragino LoRa/GPS HAT, it is currently being used to connect to the things network https://thethingsnetwork.org and is based on work from https://github.com/jeroennijhof/LoRaWAN
 
 It also uses https://github.com/mayeranalytics/pySX127x.
@@ -80,7 +84,7 @@ See: https://www.lora-alliance.org/portals/0/specs/LoRaWAN%20Specification%201R0
 ## Hardware Needed
 * Raspberry Pi
 * SD card
-* LoRa/GPS HAT
+* Dragino LoRa/GPS HAT - or make your own
 * Raspberry Pi power supply
 
 ## Installation (Compute nodes version)
@@ -117,3 +121,14 @@ Secondly, I had to edit /etc/default/gpsd and ensure it has the line DEVICES=/de
 
 ## Speculation follows ##
 Quite possibly this is caused by a race condition when the Pi boots up. A similar thing happens on inserting a USB stick - it takes several seconds for the device to be mounted. So, if the Pi is booting and gpsd starts before /dev/ttyAMA0 has been created gpsd won't find it. Possibly the gpsd.service file could include a conditional clause to wait for /dev/ttyAMA0 to exist before proceeding. But hey, adding the device to the defaults file works.
+
+# Caching #
+
+The code reads initial configuration data from dragino.toml. If the device joins TTN the parameters are stored in cache.json.
+
+Next time you reboot your device, the code looks for cache.json and takes it's parameters from there. In particular the devaddr indicates the device has joined TTN at some time and does not need to perform a join again.
+
+However, if you want to force a rejoin just delete the cache.json file and reboot.
+
+During operation TTN may send MAC commands down to the device to adjust some parameters (read the spec). The cache.json file will be updated when that happens so that, after a restart, the system can carry on where it left off.
+
