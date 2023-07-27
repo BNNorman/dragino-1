@@ -5,7 +5,7 @@ class AES_CMAC:
     def gen_subkey(self, K):
         AES_128 = AES.new(K)
 
-        L = AES_128.encrypt('\x00'*16)
+        L = AES_128.encrypt(b'\x00'*16)
 
         LHigh = unpack('>Q',L[:8])[0]
         LLow  = unpack('>Q',L[8:])[0]
@@ -71,3 +71,8 @@ class AES_CMAC:
         T = AES_128.encrypt(Y)
 
         return T
+
+if __name__ == "__main__":
+    A=AES_CMAC()
+    key=bytearray([0x01]*16)
+    print(A.gen_subkey(key))
