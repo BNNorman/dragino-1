@@ -92,14 +92,16 @@ class LoRa(object):
         self.verbose = verbose
         # set the callbacks for DIO0..5 IRQs.
         BOARD.add_events(self._dio0, self._dio1, self._dio2, self._dio3, self._dio4, self._dio5)
-        # set mode to sleep and read all registers
-        self.set_mode(MODE.SLEEP)
 
-        # check if mode was set hence SPI working
+        # check SPI is working
+        self.set_mode(MODE.SLEEP) # needed to allow bit 7 to be set
+        self.set_mode(MODE.STDBY)
         mode=self.get_mode()
-        if mode==0:
+        if mode!=MODE.STDBY:
             sys.exit(f"Unable to set modem mode. Have you enabled SPI as per the readme installation section?")
 
+        # set mode to sleep and read all registers
+        self.set_mode(MODE.SLEEP)
         self.backup_registers = self.get_all_registers()
         # more setup work:
         if do_calibration:
@@ -129,6 +131,10 @@ class LoRa(object):
         self.get_dio_mapping_1()
         self.get_dio_mapping_2()
 
+        # set FIFO start addresses to enable use of the whole FIFO (256 bytes)
+        # for tx and rx. The default is to share between rx and tx (128 bytes each)
+        self.set_fifo_tx_base_addr(0)
+        self.set_fifo_rx_base_addr(0)
 
     # Overridable functions:
 
