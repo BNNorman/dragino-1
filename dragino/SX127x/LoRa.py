@@ -23,10 +23,19 @@
 import sys
 from .constants import *
 from .board_config import BOARD
+import time
 
 
 ################################################## Some utility functions ##############################################
+def hexStr(num):
+    return "0x%0.2X" % num
 
+def modeStr(mode):
+    try:
+        return MODE.lookup[mode & 0x87] # ignore low frequency bit if set
+    except:
+        raise Exception(f"Requested mode {hexStr(mode)} is not in the list (constants.py)")
+    
 def set_bit(value, index, new_bit):
     """ Set the index'th bit of value to new_bit, and return the new value.
     :param value:   The integer to set the new_bit in
@@ -92,16 +101,14 @@ class LoRa(object):
         self.verbose = verbose
         # set the callbacks for DIO0..5 IRQs.
         BOARD.add_events(self._dio0, self._dio1, self._dio2, self._dio3, self._dio4, self._dio5)
-
-        # check SPI is working
-        self.set_mode(MODE.SLEEP) # needed to allow bit 7 to be set
-        self.set_mode(MODE.STDBY)
-        mode=self.get_mode()
-        if mode!=MODE.STDBY:
-            sys.exit(f"Unable to set modem mode. Have you enabled SPI as per the readme installation section?")
-
         # set mode to sleep and read all registers
         self.set_mode(MODE.SLEEP)
+
+        # check if mode was set hence SPI working
+        mode=self.get_mode()
+        if mode==0:
+            sys.exit(f"Unable to set modem mode. Have you enabled SPI as per the readme installation section?")
+
         self.backup_registers = self.get_all_registers()
         # more setup work:
         if do_calibration:
@@ -131,8 +138,6 @@ class LoRa(object):
         self.get_dio_mapping_1()
         self.get_dio_mapping_2()
 
-        # set FIFO start addresses to enable use of the whole FIFO (256 bytes)
-        # for tx and rx. The default is to share between rx and tx (128 bytes each)
         self.set_fifo_tx_base_addr(0)
         self.set_fifo_rx_base_addr(0)
 
@@ -220,23 +225,87 @@ class LoRa(object):
         """
         self.mode = self.spi.xfer([REG.LORA.OP_MODE, 0])[1]
         return self.mode
-
-    def set_mode(self, mode):
-        """ Set the mode
-        :param mode: Set the mode. Use constants.MODE class
-        :return:    New mode
+    
+    def check_mode_ready(self,req_mode,timeout=.1):
+        """check mode ready
+        some changes can take upto 2ms (especially when sleep is involved)
+        so we loop till the mode has changed or timeout (wiring wrong?)
+        
+        :param req_mode: the requested mode
+        :param timeout: length of time to wait for the mode change
+        :return: True if the current mode matches the requested mode else False
         """
-        try:
-            # the mode is backed up in self.mode
-            if mode == self.mode:
-                return mode
-            if self.verbose:
-                sys.stderr.write("Mode <- %s\n" % MODE.lookup[mode])
-            self.mode = mode
-            return self.spi.xfer([REG.LORA.OP_MODE | 0x80, mode])[1]
-        except KeyError:
-            sys.stderr.write(f"set_mode KeyError error mode requested was {mode}\n")
-            return self.mode
+        current_mode=self.get_mode()
+        start=time.monotonic()
+        while current_mode!=req_mode:
+            current_mode=self.get_mode()
+            if time.monotonic()>(start+timeout):
+                print(f"check_mode_ready() timeout current_mode={modeStr(current_mode)} req_mode={modeStr(req_mode)}")
+                raise Exception(f"Timeout waiting for mode change from {modeStr(current_mode)}  to {modeStr(req_mode)}")
+            time.sleep(0.0001) # typical empirical max when switching from sleep to other
+        return True
+    
+    def set_mode(self, new_mode):
+        """ Set the mode
+        mode reg bit 7 can only be changed in SLEEP mode. If the bit is about to be changed
+        switch to SLEEP first
+        :param mode: Set the mode. Use constants.MODE class
+        :return:    nothing
+        """
+        
+        prev_mode=self.get_mode() & 0x87 # not interested in LOW Frequency bit
+        
+        #print(f"_set_mode START {modeStr(new_mode)} prev mode {modeStr(prev_mode)}")
+        
+        if new_mode == prev_mode:
+            #print(f"_set_mode FINISHED Mode is already {modeStr(new_mode)}")
+            return
+        
+        if self.verbose:
+            try:
+                print(f"_set_mode : {MODE.lookup[new_mode]}")
+            except KeyError:
+                #
+                print(f"_set_mode KeyError. Mode requested {hexStr(new_mode)} not in mode list")
+                return
+            
+        # check if bit 7 of the mode register is about to change
+        # if so we can only do that via SLEEP but isn't that simple
+        # experimentaion shows that going from Lora to FSK requires
+        # mode change from SLEEP to FSK_SLEEP first
+        # and from Non-LoRa to LoRa requires the reverse.
+        # Sleep mode changes can take upto 0.002s
+        
+        if (prev_mode & 0x80)!=(new_mode & 0x80):
+            #print("_set_mode Bit 7 is changing")
+            if new_mode & 0x80:
+                # we are transitioning to LoRA
+                if prev_mode!=MODE.FSK_SLEEP:
+                    #print("_set_mode Switching to FSK SLEEP before switching to LORA_SLEEP")
+                    self.spi.xfer([REG.LORA.OP_MODE | 0x80, MODE.FSK_SLEEP])
+                    self.check_mode_ready(MODE.FSK_SLEEP)
+                #print("_set_mode Switching to LORA MODE.SLEEP")
+                self.spi.xfer([REG.LORA.OP_MODE | 0x80, MODE.SLEEP])
+                self.check_mode_ready(MODE.SLEEP)
+                prev_mode=MODE.SLEEP
+            else:
+                # we are transitioning to FSK (rx_chain_calibration needs it)
+                #print("_set_mode Switching to FSK mode")
+                if prev_mode!=MODE.SLEEP:
+                    self.spi.xfer([REG.LORA.OP_MODE | 0x80, MODE.SLEEP])
+                    self.check_mode_ready(MODE.SLEEP)
+                self.spi.xfer([REG.LORA.OP_MODE | 0x80, MODE.FSK_SLEEP])
+                self.check_mode_ready(MODE.FSK_SLEEP)
+                prev_mode=MODE.FSK_SLEEP
+
+            
+        # set the new mode
+        #print(f"_set_mode now changing mode to {modeStr(new_mode)}")
+
+        self.spi.xfer([REG.LORA.OP_MODE | 0x80, new_mode])
+        self.check_mode_ready(new_mode)
+        #print(f"_set_mode FINISHED mode={modeStr(self.get_mode())}")
+        return
 
     def write_payload(self, payload):
         """ Get FIFO ready for TX: Set FifoAddrPtr to FifoTxBaseAddr. The transceiver is put into STDBY mode.
@@ -249,7 +318,9 @@ class LoRa(object):
         self.set_mode(MODE.STDBY)
         base_addr = self.get_fifo_tx_base_addr()
         self.set_fifo_addr_ptr(base_addr)
-        return self.spi.xfer([REG.LORA.FIFO | 0x80] + payload)[1:]
+        self.spi.xfer([REG.LORA.FIFO | 0x80] + payload)
+    
+        
 
     def reset_ptr_rx(self):
         """ Get FIFO ready for RX: Set FifoAddrPtr to FifoRxBaseAddr. The transceiver is put into STDBY mode. """

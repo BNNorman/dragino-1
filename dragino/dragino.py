@@ -119,7 +119,7 @@ class Dragino(LoRa):
         except Exception as e:
             self.logger.error(f"error initialising radio config {e}. Check config values are not strings")
             
-        assert self.get_agc_auto_on() == 1
+		self.set_agc_auto_on(1)
 
         # for downlink DATA messages
         self.downlinkCallback=None
