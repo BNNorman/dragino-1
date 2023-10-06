@@ -32,17 +32,25 @@ def add_lookup(cls):
 
 @add_lookup
 class MODE:
-    SLEEP    = 0x80
-    STDBY    = 0x81
-    FSTX     = 0x82
-    TX       = 0x83
-    FSRX     = 0x84
-    RXCONT   = 0x85
-    RXSINGLE = 0x86
-    CAD      = 0x87
-    FSK_STDBY= 0x01     # needed for calibration
-    FSK_SLEEP= 0x00     #
-
+    # NOTE, lowFrequencyModeOn is bit 3, set but we don't use it
+    # LoRa modes
+    SLEEP           = 0x80
+    STDBY           = 0x81
+    FSTX            = 0x82
+    TX              = 0x83
+    FSRX            = 0x84
+    RXCONT          = 0x85
+    RXSINGLE        = 0x86
+    CAD             = 0x87
+    # FSK modes
+    FSK_SLEEP       = 0x00
+    FSK_STDBY       = 0x01     # needed for calibration
+    FSK_FSTX        = 0x02
+    FSK_TX          = 0x03
+    FSK_FSRX        = 0x04
+    FSK_RXCONT      = 0x05
+    FSK_RES1        = 0x06  # reserved mode 1
+    FSK_RES2        = 0x07  # reserved mode 2
 
 @add_lookup
 class BW:
