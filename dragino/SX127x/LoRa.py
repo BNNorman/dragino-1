@@ -99,15 +99,19 @@ class LoRa(object):
         :param do_calibration: Call rx_chain_calibration, default is True.
         """
         self.verbose = verbose
+
+        # sometimes the RFM95 is set to low frequency mode
+        # we don't want that so we reset the LF bit
+        mode=self.get_mode()
+        print("Current mode is",hexStr(mode))
+        if mode & 0x04:
+            print("Low frequency bit was set!")
+            self.set_mode(mode & 0x87) # turn off the low frequency bit
+
         # set the callbacks for DIO0..5 IRQs.
         BOARD.add_events(self._dio0, self._dio1, self._dio2, self._dio3, self._dio4, self._dio5)
         # set mode to sleep and read all registers
         self.set_mode(MODE.SLEEP)
-
-        # check if mode was set hence SPI working
-        mode=self.get_mode()
-        if mode==0:
-            sys.exit(f"Unable to set modem mode. Have you enabled SPI as per the readme installation section?")
 
         self.backup_registers = self.get_all_registers()
         # more setup work:
