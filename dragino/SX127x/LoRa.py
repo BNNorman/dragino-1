@@ -1,5 +1,7 @@
 """ Defines the SX127x class and a few utility functions. """
 
+# Modified by Brian Norman 2023
+#
 # Copyright 2015 Mayer Analytics Ltd.
 #
 # This file is part of pySX127x.
@@ -24,9 +26,15 @@ import sys
 from .constants import *
 from .board_config import BOARD
 import time
+import RPi.GPIO as GPIO
 
 
 ################################################## Some utility functions ##############################################
+def raiseException(msg):
+    """Make sure the GPIOs & SPI etc are reset before terminating."""
+    BOARD.teardown()
+    raise Exception(msg)
+    
 def hexStr(num):
     return "0x%0.2X" % num
 
@@ -34,7 +42,7 @@ def modeStr(mode):
     try:
         return MODE.lookup[mode & 0x87] # ignore low frequency bit if set
     except:
-        raise Exception(f"Requested mode {hexStr(mode)} is not in the list (constants.py)")
+        raiseException(f"Requested mode {hexStr(mode)} is not in the list (constants.py)")
     
 def set_bit(value, index, new_bit):
     """ Set the index'th bit of value to new_bit, and return the new value.
@@ -84,10 +92,7 @@ def setter(register_address):
 
 class LoRa(object):
 
-    spi = BOARD.SpiDev()              # init and get the baord's SPI
-    mode = None                       # the mode is backed up here
-    backup_registers = []
-    verbose = True
+    verbose = False
     dio_mapping = [None] * 6          # store the dio mapping here
 
     def __init__(self, verbose=True, do_calibration=True, calibration_freq=868):
@@ -99,54 +104,51 @@ class LoRa(object):
         :param do_calibration: Call rx_chain_calibration, default is True.
         """
         self.verbose = verbose
+        
+        self.spi=BOARD.SpiDev()
+        
+        # check SPI works
+        vsn=self.get_version()
+        if vsn==0:
+            raiseException("SPI is not working or the RFM has an invalid version. Got 0x00")
+        else:
+            print(f"SX127x chip version is {hexStr(vsn)}")
+        
+        # sometimes the start up mode has the low frequency bit set
+        # seen after a soft restart
 
-        # sometimes the RFM95 is set to low frequency mode
-        # we don't want that so we reset the LF bit
-        mode=self.get_mode()
-        print("Current mode is",hexStr(mode))
-        if mode & 0x04:
-            print("Low frequency bit was set!")
-            self.set_mode(mode & 0x87) # turn off the low frequency bit
+        print(f"initial mode is {modeStr(self.get_mode())}")
 
+        self.set_mode(MODE.FSK_STDBY) # start from a known point
+            
+        print(f"initial mode changed to {modeStr(self.get_mode())}")
+            
         # set the callbacks for DIO0..5 IRQs.
         BOARD.add_events(self._dio0, self._dio1, self._dio2, self._dio3, self._dio4, self._dio5)
-        # set mode to sleep and read all registers
-        self.set_mode(MODE.SLEEP)
 
-        self.backup_registers = self.get_all_registers()
         # more setup work:
         if do_calibration:
             self.rx_chain_calibration(calibration_freq)
-        # the FSK registers are set up exactly as modtronix do it:
-        lookup_fsk = [
-            #[REG.FSK.LNA            , 0x23],
-            #[REG.FSK.RX_CONFIG      , 0x1E],
-            #[REG.FSK.RSSI_CONFIG    , 0xD2],
-            #[REG.FSK.PREAMBLE_DETECT, 0xAA],
-            #[REG.FSK.OSC            , 0x07],
-            #[REG.FSK.SYNC_CONFIG    , 0x12],
-            #[REG.FSK.SYNC_VALUE_1   , 0xC1],
-            #[REG.FSK.SYNC_VALUE_2   , 0x94],
-            #[REG.FSK.SYNC_VALUE_3   , 0xC1],
-            #[REG.FSK.PACKET_CONFIG_1, 0xD8],
-            #[REG.FSK.FIFO_THRESH    , 0x8F],
-            #[REG.FSK.IMAGE_CAL      , 0x02],
-            #[REG.FSK.DIO_MAPPING_1  , 0x00],
-            #[REG.FSK.DIO_MAPPING_2  , 0x30]
-        ]
-        self.set_mode(MODE.FSK_STDBY)
-        for register_address, value in lookup_fsk:
-            self.set_register(register_address, value)
-        self.set_mode(MODE.SLEEP)
+            
+        self.set_mode(MODE.SLEEP) # LoRa mode
+        
         # set the dio_ mapping by calling the two get_dio_mapping_* functions
         self.get_dio_mapping_1()
         self.get_dio_mapping_2()
 
         self.set_fifo_tx_base_addr(0)
         self.set_fifo_rx_base_addr(0)
+        
+        time.sleep(0.1)
 
+    def reset_radio(self):
+        BOARD.resetRadio()
+        
+    ###########################################
+    #
     # Overridable functions:
-
+    #
+    ###########################################
     def on_rx_done(self):
         pass
 
@@ -181,7 +183,7 @@ class LoRa(object):
         elif self.dio_mapping[0] == 2:
             self.on_cad_done()
         else:
-            raise RuntimeError("unknown dio0mapping!")
+            raiseException(f"unknown dio0 mapping! {self.dio_mapping}")
 
     def _dio1(self, channel):
         # DIO1 00: RxTimeout
@@ -194,7 +196,7 @@ class LoRa(object):
         elif self.dio_mapping[1] == 2:
             self.on_CadDetected()
         else:
-            raise RuntimeError("unknown dio1mapping!")
+            raiseException(f"unknown dio1 mapping! {self.dio_mapping}")
 
     def _dio2(self, channel):
         # DIO2 00: FhssChangeChannel
@@ -213,13 +215,13 @@ class LoRa(object):
         elif self.dio_mapping[3] == 2:
             self.on_payload_crc_error()
         else:
-            raise RuntimeError("unknown dio3 mapping!")
+            raiseException(f"unknown dio3 mapping! {self.dio_mapping}")
 
     def _dio4(self, channel):
-        raise RuntimeError("DIO4 is not used")
+        raiseException("DIO4 is not used")
 
     def _dio5(self, channel):
-        raise RuntimeError("DIO5 is not used")
+        raiseException("DIO5 is not used")
 
     # All the set/get/read/write functions
 
@@ -227,10 +229,9 @@ class LoRa(object):
         """ Get the mode
         :return:    New mode
         """
-        self.mode = self.spi.xfer([REG.LORA.OP_MODE, 0])[1]
-        return self.mode
+        return self.spi.xfer([REG.LORA.OP_MODE, 0])[1]
     
-    def check_mode_ready(self,req_mode,timeout=.1):
+    def check_mode_ready(self,req_mode,timeout=.5):
         """check mode ready
         some changes can take upto 2ms (especially when sleep is involved)
         so we loop till the mode has changed or timeout (wiring wrong?)
@@ -240,13 +241,15 @@ class LoRa(object):
         :return: True if the current mode matches the requested mode else False
         """
         current_mode=self.get_mode()
+        #print("check_mode_ready current_mode",hexStr(current_mode),"requested mode",hexStr(req_mode))
         start=time.monotonic()
         while current_mode!=req_mode:
             current_mode=self.get_mode()
             if time.monotonic()>(start+timeout):
-                print(f"check_mode_ready() timeout current_mode={modeStr(current_mode)} req_mode={modeStr(req_mode)}")
-                raise Exception(f"Timeout waiting for mode change from {modeStr(current_mode)}  to {modeStr(req_mode)}")
+                raiseException(f"check_mode_ready() timeout current_mode={modeStr(current_mode)} ({hexStr(current_mode)}) req_mode={modeStr(req_mode)} ({hexStr(req_mode)})")
             time.sleep(0.0001) # typical empirical max when switching from sleep to other
+            #print(".",end="")
+        #print("Mode was changed")
         return True
     
     def set_mode(self, new_mode):
@@ -257,9 +260,9 @@ class LoRa(object):
         :return:    nothing
         """
         
-        prev_mode=self.get_mode() & 0x87 # not interested in LOW Frequency bit
+        prev_mode=self.get_mode()
         
-        #print(f"_set_mode START {modeStr(new_mode)} prev mode {modeStr(prev_mode)}")
+        #print(f"set_mode() START new mode:{modeStr(new_mode)} prev mode:{modeStr(prev_mode)}")
         
         if new_mode == prev_mode:
             #print(f"_set_mode FINISHED Mode is already {modeStr(new_mode)}")
@@ -267,10 +270,10 @@ class LoRa(object):
         
         if self.verbose:
             try:
-                print(f"_set_mode : {MODE.lookup[new_mode]}")
+                print(f"set_mode : {MODE.lookup[new_mode]}")
             except KeyError:
                 #
-                print(f"_set_mode KeyError. Mode requested {hexStr(new_mode)} not in mode list")
+                print(f"set_mode : KeyError. Mode requested {hexStr(new_mode)} is not in MODE list. Ignored")
                 return
             
         # check if bit 7 of the mode register is about to change
@@ -285,30 +288,29 @@ class LoRa(object):
             if new_mode & 0x80:
                 # we are transitioning to LoRA
                 if prev_mode!=MODE.FSK_SLEEP:
-                    #print("_set_mode Switching to FSK SLEEP before switching to LORA_SLEEP")
+                    #print("set_mode Switching to FSK SLEEP before switching to LORA_SLEEP")
                     self.spi.xfer([REG.LORA.OP_MODE | 0x80, MODE.FSK_SLEEP])
                     self.check_mode_ready(MODE.FSK_SLEEP)
-                #print("_set_mode Switching to LORA MODE.SLEEP")
+                #print("set_mode Switching to LORA MODE.SLEEP")
                 self.spi.xfer([REG.LORA.OP_MODE | 0x80, MODE.SLEEP])
                 self.check_mode_ready(MODE.SLEEP)
-                prev_mode=MODE.SLEEP
             else:
                 # we are transitioning to FSK (rx_chain_calibration needs it)
-                #print("_set_mode Switching to FSK mode")
+                #print("set_mode Switching to FSK mode")
                 if prev_mode!=MODE.SLEEP:
                     self.spi.xfer([REG.LORA.OP_MODE | 0x80, MODE.SLEEP])
                     self.check_mode_ready(MODE.SLEEP)
+                #print("set_mode Switching to FSK.SLEEP")
                 self.spi.xfer([REG.LORA.OP_MODE | 0x80, MODE.FSK_SLEEP])
                 self.check_mode_ready(MODE.FSK_SLEEP)
-                prev_mode=MODE.FSK_SLEEP
 
-            
         # set the new mode
-        #print(f"_set_mode now changing mode to {modeStr(new_mode)}")
+        #print(f"set_mode finally changing mode to {modeStr(new_mode)}")
 
         self.spi.xfer([REG.LORA.OP_MODE | 0x80, new_mode])
         self.check_mode_ready(new_mode)
-        #print(f"_set_mode FINISHED mode={modeStr(self.get_mode())}")
+        
+        #print(f"set_mode FINISHED mode={modeStr(self.get_mode())}")
         return
 
     def write_payload(self, payload):
@@ -370,7 +372,14 @@ class LoRa(object):
         :return: New register settings (3 bytes [msb, mid, lsb])
         :rtype: list[int]
         """
-        assert self.mode == MODE.SLEEP or self.mode == MODE.STDBY or self.mode == MODE.FSK_STDBY
+        # make sure device is in STDBY or SLEEP rather than raise and exception
+        cur_mode=self.get_mode()
+        if  cur_mode & 0x07 not in [0,1]: # must be SLEEP or STDBY
+            if cur_mode & 0x80:
+                self.set_mode(MODE.STDBY)
+            else:
+                self.set_mode(MODE.FSK_STDBY)
+                              
         i = int(f * 16384.)    # choose floor
         msb = i // 65536
         i -= msb * 65536
@@ -903,7 +912,7 @@ class LoRa(object):
         elif pa_dac == 0x07:
             return True
         else:
-            raise RuntimeError("Bad PA_DAC value %s" % hex(pa_dac))
+            raiseException(f"Bad PA_DAC value {hexStr(pa_dac)}")
 
     @setter(REG.LORA.PA_DAC)
     def set_pa_dac(self, pa_dac):
@@ -935,6 +944,7 @@ class LoRa(object):
         while (self.get_register(REG.FSK.IMAGE_CAL) & 0x20) == 0x20:
             pass
         # Set a Frequency in HF band
+        self.set_mode(MODE.FSK_STDBY)
         self.set_freq(freq)
         # calibration for the HF band
         image_cal = (self.get_register(REG.FSK.IMAGE_CAL) & 0xBF) | 0x40
@@ -971,7 +981,6 @@ class LoRa(object):
     def get_all_registers(self):
         # read all registers
         reg = [0] + self.spi.xfer([1]+[0]*0x3E)[1:]
-        self.mode = reg[1]
         return reg
 
     def __del__(self):
@@ -981,7 +990,9 @@ class LoRa(object):
 
     def __str__(self):
         # don't use __str__ while in any mode other that SLEEP or STDBY
-        assert(self.mode == MODE.SLEEP or self.mode == MODE.STDBY)
+        cur_mode=self.get_mode()
+        if not cur_mode & 0x07 in [0,1]:
+            raiseException("__str__() should only be used on STDBY or SLEEP")
 
         onoff = lambda i: 'ON' if i else 'OFF'
         f = self.get_freq()
