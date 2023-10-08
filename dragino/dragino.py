@@ -82,6 +82,7 @@ class Dragino(LoRa):
         """
 
         BOARD.setup()
+        
         super(Dragino, self).__init__() # LoRa init
 
         self.TC=TomlConfig(config_filename)                 # load user config
