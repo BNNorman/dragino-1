@@ -40,7 +40,7 @@ def hexStr(num):
 
 def modeStr(mode):
     try:
-        return MODE.lookup[mode & 0x87] # ignore low frequency bit if set
+        return MODE.lookup[mode]
     except:
         raiseException(f"Requested mode {hexStr(mode)} is not in the list (constants.py)")
     
