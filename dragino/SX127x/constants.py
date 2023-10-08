@@ -51,8 +51,15 @@ class MODE:
     FSK_RXCONT      = 0x05
     FSK_RES1        = 0x06  # reserved mode 1
     FSK_RES2        = 0x07  # reserved mode 2
-    # LF modes
+    # Low Frequency modes
+    LF_FSK_SLEEP    = 0x08
     LF_FSK_STDBY    = 0x09  # sometimes seen when the RFM95 powers up (possible PSU glitch?)
+    LF_FSK_FSTX     = 0x0A
+    LF_FSK_TX       = 0x0B
+    LF_FSK_FSRX     = 0x0C
+    LF_FSK_RXCONT   = 0x0D
+    LF_FSK_RES1     = 0x0E  # LF reserved mode 1
+    LF_FSK_RES2     = 0x0F  # LF reserved mode 2
 
 @add_lookup
 class BW:
