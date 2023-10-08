@@ -51,6 +51,8 @@ class MODE:
     FSK_RXCONT      = 0x05
     FSK_RES1        = 0x06  # reserved mode 1
     FSK_RES2        = 0x07  # reserved mode 2
+    # LF modes
+    LF_FSK_STDBY    = 0x09  # sometimes seen when the RFM95 powers up (possible PSU glitch?)
 
 @add_lookup
 class BW:
