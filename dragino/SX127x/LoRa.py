@@ -984,9 +984,8 @@ class LoRa(object):
         return reg
 
     def __del__(self):
-        self.set_mode(MODE.SLEEP)
-        if self.verbose:
-            sys.stderr.write("MODE=SLEEP\n")
+        # closes SPI and calls GPIO.cleanup()
+        BOARD.teardown()
 
     def __str__(self):
         # don't use __str__ while in any mode other that SLEEP or STDBY
