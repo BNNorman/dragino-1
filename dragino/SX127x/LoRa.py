@@ -983,11 +983,6 @@ class LoRa(object):
         reg = [0] + self.spi.xfer([1]+[0]*0x3E)[1:]
         return reg
 
-    def __del__(self):
-        self.set_mode(MODE.SLEEP)
-        if self.verbose:
-            sys.stderr.write("MODE=SLEEP\n")
-
     def __str__(self):
         # don't use __str__ while in any mode other that SLEEP or STDBY
         cur_mode=self.get_mode()
