@@ -18,6 +18,10 @@ f.close()
 logLevel=logging.DEBUG
 logging.basicConfig(filename="test.log", format='%(asctime)s - %(funcName)s - %(lineno)d - %(levelname)s - %(message)s', level=logLevel)
 
+# required to stop your log file filling up with debug info relating to these
+logging.getLogger('parso.cache').disabled=True
+logging.getLogger('parso.cache.pickle').disabled=True
+
 # create a Dragino object and join to TTN
 D = Dragino("dragino.toml", logging_level=logLevel)
 D.join()
