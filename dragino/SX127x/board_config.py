@@ -32,6 +32,7 @@ class BOARD:
         This is the Raspberry Pi board with a Dragino LoRa/GPS HAT
     """
     # Note that the BCOM numbering for the GPIOs is used.
+    RST = 11
     DIO0 = 4   # RaspPi GPIO 4
     DIO1 = 23   # RaspPi GPIO 23
     DIO2 = 24   # RaspPi GPIO 24
@@ -47,10 +48,12 @@ class BOARD:
         """ Configure the Raspberry GPIOs
         :rtype : None
         """
+        print("Configuring GPIOs")
         GPIO.setmode(GPIO.BCM)
         # LED
         GPIO.setup(BOARD.LED, GPIO.OUT)
         GPIO.output(BOARD.LED, 0)
+        
         # switch
         GPIO.setup(BOARD.SWITCH, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
         # DIOx
@@ -61,10 +64,26 @@ class BOARD:
         BOARD.blink(.1, 2)
 
     @staticmethod
+    def reset_radio():
+        print("BOARD.reset_radio()")
+        try:
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(BOARD.RST,GPIO.IN)
+            GPIO.setup(BOARD.RST,GPIO.OUT)
+            GPIO.output(BOARD.RST, GPIO.LOW)
+            time.sleep(0.001) # must be > 100us
+            GPIO.output(BOARD.RST, GPIO.HIGH)
+            time.sleep(0.01) # chip needs 5ms to reset
+            GPIO.cleanup()
+        except:
+            print("Unable to reset the RFM95")
+
+    @staticmethod
     def teardown():
         """ Cleanup GPIO and SpiDev """
-        GPIO.cleanup()
+        print("\nClosing SPI")
         BOARD.spi.close()
+        GPIO.cleanup()
 
     @staticmethod
     def SpiDev(spi_bus=0, spi_cs=SPI_CS):
@@ -76,6 +95,7 @@ class BOARD:
         """
         BOARD.spi = spidev.SpiDev()
         BOARD.spi.open(spi_bus, spi_cs)
+        print("BOARD SpiDev created")
         return BOARD.spi
 
     @staticmethod
