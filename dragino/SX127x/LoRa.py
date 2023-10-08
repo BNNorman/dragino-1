@@ -985,6 +985,7 @@ class LoRa(object):
 
     def __del__(self):
         # closes SPI and calls GPIO.cleanup()
+        # make sure spi and gpio are in a good state
         BOARD.teardown()
 
     def __str__(self):
