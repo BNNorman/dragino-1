@@ -119,7 +119,7 @@ class LoRa(object):
 
         print(f"initial mode is {modeStr(self.get_mode())}")
 
-        self.set_mode(MODE.FSK_STDBY) # start from a known point
+        self.set_mode(MODE.HF_FSK_STDBY) # start from a known point
             
         print(f"initial mode changed to {modeStr(self.get_mode())}")
             
@@ -130,7 +130,7 @@ class LoRa(object):
         if do_calibration:
             self.rx_chain_calibration(calibration_freq)
             
-        self.set_mode(MODE.SLEEP) # LoRa mode
+        self.set_mode(MODE.HF_LORA_SLEEP) # LoRa mode
         
         # set the dio_ mapping by calling the two get_dio_mapping_* functions
         self.get_dio_mapping_1()
@@ -279,7 +279,7 @@ class LoRa(object):
         # check if bit 7 of the mode register is about to change
         # if so we can only do that via SLEEP but isn't that simple
         # experimentaion shows that going from Lora to FSK requires
-        # mode change from SLEEP to FSK_SLEEP first
+        # mode change from LORA_SLEEP to FSK_SLEEP first
         # and from Non-LoRa to LoRa requires the reverse.
         # Sleep mode changes can take upto 0.002s
         
@@ -287,22 +287,22 @@ class LoRa(object):
             #print("_set_mode Bit 7 is changing")
             if new_mode & 0x80:
                 # we are transitioning to LoRA
-                if prev_mode!=MODE.FSK_SLEEP:
+                if prev_mode!=MODE.HF_FSK_SLEEP:
                     #print("set_mode Switching to FSK SLEEP before switching to LORA_SLEEP")
-                    self.spi.xfer([REG.LORA.OP_MODE | 0x80, MODE.FSK_SLEEP])
-                    self.check_mode_ready(MODE.FSK_SLEEP)
-                #print("set_mode Switching to LORA MODE.SLEEP")
-                self.spi.xfer([REG.LORA.OP_MODE | 0x80, MODE.SLEEP])
-                self.check_mode_ready(MODE.SLEEP)
+                    self.spi.xfer([REG.LORA.OP_MODE | 0x80, MODE.HF_FSK_SLEEP])
+                    self.check_mode_ready(MODE.HF_FSK_SLEEP)
+                #print("set_mode Switching to MODE.HF_LORA_SLEEP")
+                self.spi.xfer([REG.LORA.OP_MODE | 0x80, MODE.HF_LORA_SLEEP])
+                self.check_mode_ready(MODE.HF_LORA_SLEEP)
             else:
                 # we are transitioning to FSK (rx_chain_calibration needs it)
-                #print("set_mode Switching to FSK mode")
-                if prev_mode!=MODE.SLEEP:
-                    self.spi.xfer([REG.LORA.OP_MODE | 0x80, MODE.SLEEP])
-                    self.check_mode_ready(MODE.SLEEP)
+                #print("set_mode Switching to mode HF_FSK_SLEEP")
+                if prev_mode!=MODE.HF_LORA_SLEEP:
+                    self.spi.xfer([REG.LORA.OP_MODE | 0x80, MODE.HF_LORA_SLEEP])
+                    self.check_mode_ready(MODE.HF_LORA_SLEEP)
                 #print("set_mode Switching to FSK.SLEEP")
-                self.spi.xfer([REG.LORA.OP_MODE | 0x80, MODE.FSK_SLEEP])
-                self.check_mode_ready(MODE.FSK_SLEEP)
+                self.spi.xfer([REG.LORA.OP_MODE | 0x80, MODE.HF_FSK_SLEEP])
+                self.check_mode_ready(MODE.HF_FSK_SLEEP)
 
         # set the new mode
         #print(f"set_mode finally changing mode to {modeStr(new_mode)}")
@@ -321,7 +321,7 @@ class LoRa(object):
         payload_size = len(payload)
         self.set_payload_length(payload_size)
         
-        self.set_mode(MODE.STDBY)
+        self.set_mode(MODE.HF_LORA_STDBY)
         base_addr = self.get_fifo_tx_base_addr()
         self.set_fifo_addr_ptr(base_addr)
         self.spi.xfer([REG.LORA.FIFO | 0x80] + payload)
@@ -330,7 +330,7 @@ class LoRa(object):
 
     def reset_ptr_rx(self):
         """ Get FIFO ready for RX: Set FifoAddrPtr to FifoRxBaseAddr. The transceiver is put into STDBY mode. """
-        self.set_mode(MODE.STDBY)
+        self.set_mode(MODE.HF_LORA_STDBY)
         base_addr = self.get_fifo_rx_base_addr()
         self.set_fifo_addr_ptr(base_addr)
 
@@ -374,11 +374,11 @@ class LoRa(object):
         """
         # make sure device is in STDBY or SLEEP rather than raise and exception
         cur_mode=self.get_mode()
-        if  cur_mode & 0x07 not in [0,1]: # must be SLEEP or STDBY
+        if  cur_mode & 0x07 not in [0,1]: # must be SLEEP or STDBY to change freq
             if cur_mode & 0x80:
-                self.set_mode(MODE.STDBY)
+                self.set_mode(MODE.HF_LORA_STDBY)
             else:
-                self.set_mode(MODE.FSK_STDBY)
+                self.set_mode(MODE.HF_FSK_STDBY)
                               
         i = int(f * 16384.)    # choose floor
         msb = i // 65536
@@ -460,7 +460,7 @@ class LoRa(object):
 
     def set_lna(self, lna_gain=None, lna_boost_lf=None, lna_boost_hf=None):
         assert lna_boost_hf is None or lna_boost_hf == 0b00 or lna_boost_hf == 0b11
-        self.set_mode(MODE.STDBY)
+        self.set_mode(MODE.HF_LORA_STDBY)
         if lna_gain is not None:
             # Apparently agc_auto_on must be 0 in order to set lna_gain
             self.set_agc_auto_on(lna_gain == GAIN.NOT_USED)
@@ -935,7 +935,7 @@ class LoRa(object):
         pa_config_bkup = self.get_register(REG.LORA.PA_CONFIG)
         freq_bkup = self.get_freq()
         # for image calibration device must be in FSK standby mode
-        self.set_mode(MODE.FSK_STDBY)
+        self.set_mode(MODE.HF_FSK_STDBY)
         # cut the PA
         self.set_register(REG.LORA.PA_CONFIG, 0x00)
         # calibration for the LF band
@@ -944,7 +944,7 @@ class LoRa(object):
         while (self.get_register(REG.FSK.IMAGE_CAL) & 0x20) == 0x20:
             pass
         # Set a Frequency in HF band
-        self.set_mode(MODE.FSK_STDBY)
+        self.set_mode(MODE.HF_FSK_STDBY)
         self.set_freq(freq)
         # calibration for the HF band
         image_cal = (self.get_register(REG.FSK.IMAGE_CAL) & 0xBF) | 0x40
@@ -961,7 +961,7 @@ class LoRa(object):
         :return: List of [reg_addr, reg_name, reg_value] tuples
         :rtype: list[tuple]
         """
-        self.set_mode(MODE.SLEEP)
+        self.set_mode(MODE.HF_LORA_SLEEP)
         values = self.get_all_registers()
         skip_set = set([REG.LORA.FIFO])
         result_list = []
@@ -984,9 +984,10 @@ class LoRa(object):
         return reg
 
     def __del__(self):
-        # closes SPI and calls GPIO.cleanup()
-        # make sure spi and gpio are in a good state
-        BOARD.teardown()
+        # test if SPI was closed, if not close it
+        vsn=self.get_version()
+        if vsn!=0:
+            BOARD.teardown()
 
     def __str__(self):
         # don't use __str__ while in any mode other that SLEEP or STDBY

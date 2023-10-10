@@ -32,35 +32,48 @@ def add_lookup(cls):
 
 @add_lookup
 class MODE:
-    # NOTE, lowFrequencyModeOn is bit 3, set but we don't use it
-    # LoRa modes
-    SLEEP           = 0x80
-    STDBY           = 0x81
-    FSTX            = 0x82
-    TX              = 0x83
-    FSRX            = 0x84
-    RXCONT          = 0x85
-    RXSINGLE        = 0x86
-    CAD             = 0x87
-    # FSK modes
-    FSK_SLEEP       = 0x00
-    FSK_STDBY       = 0x01     # needed for calibration
-    FSK_FSTX        = 0x02
-    FSK_TX          = 0x03
-    FSK_FSRX        = 0x04
-    FSK_RXCONT      = 0x05
-    FSK_RES1        = 0x06  # reserved mode 1
-    FSK_RES2        = 0x07  # reserved mode 2
-    # Low Frequency modes
-    LF_FSK_SLEEP    = 0x08
-    LF_FSK_STDBY    = 0x09  # sometimes seen when the RFM95 powers up (possible PSU glitch?)
-    LF_FSK_FSTX     = 0x0A
-    LF_FSK_TX       = 0x0B
-    LF_FSK_FSRX     = 0x0C
-    LF_FSK_RXCONT   = 0x0D
-    LF_FSK_RES1     = 0x0E  # LF reserved mode 1
-    LF_FSK_RES2     = 0x0F  # LF reserved mode 2
-
+    # mode lookup will give more detail rather than just SLEEP etc
+    # High frequency FSK modes
+    HF_FSK_SLEEP     = 0x00
+    HF_FSK_STDBY     = 0x01
+    HF_FSK_FSTX      = 0x02
+    HF_FSK_TX        = 0x03
+    HF_FSK_FSRX      = 0x04
+    HF_FSK_RXCONT    = 0x05
+    HF_FSK_RXSINGLE  = 0x06
+    HF_FSK_CAD       = 0x07
+    
+    # Low frequency FSK modes
+    LF_FSK_SLEEP     = 0x08
+    LF_FSK_STDBY     = 0x09
+    LF_FSK_FSTX      = 0x0A
+    LF_FSK_TX        = 0X0B
+    LF_FSK_FSRX      = 0x0C
+    LF_FSK_RXCONT    = 0x0D
+    LF_FSK_RXSINGLE  = 0x0E
+    LF_FSK_CAD       = 0x0F
+    
+    # High frequency LoRa modes
+    HF_LORA_SLEEP    = 0x80
+    HF_LORA_STDBY    = 0x81
+    HF_LORA_FSTX     = 0x82
+    HF_LORA_TX       = 0x83
+    HF_LORA_FSRX     = 0x84
+    HF_LORA_RXCONT   = 0x85
+    HF_LORA_RXSINGLE = 0x86
+    HF_LORA_CAD      = 0x87
+    
+    # Low frequency LoRa modes (e.g. 433 mhz)
+    LF_LORA_SLEEP    = 0x88
+    LF_LORA_STDBY    = 0x89
+    LF_LORA_FSTX     = 0x8A
+    LF_LORA_TX       = 0x8B
+    LF_LORA_FSRX     = 0x8C
+    LF_LORA_RXCONT   = 0x8D
+    LF_LORA_RXSINGLE = 0x8E
+    LF_LORA_CAD      = 0x8F
+    
+    
 @add_lookup
 class BW:
     BW7_8   = 0

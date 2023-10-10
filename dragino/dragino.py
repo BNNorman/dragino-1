@@ -105,7 +105,7 @@ class Dragino(LoRa):
             
             """
 
-            self.set_mode(MODE.SLEEP)
+            self.set_mode(MODE.HF_LORA_SLEEP)
             self.set_dio_mapping([1, 0, 0, 0, 0, 0]) # listening
 
 
@@ -180,11 +180,11 @@ class Dragino(LoRa):
             )
    
         # now configure the radio
-        self.set_mode(MODE.SLEEP)
+        self.set_mode(MODE.HF_LORA_SLEEP)
         self.set_freq(freq)
         self.set_spreading_factor(sf)
         self.set_bw(bw)
-        self.set_mode(MODE.RXCONT)
+        self.set_mode(MODE.HF_LORA_RXCONT)
 
 
     def switchToRX2(self):
@@ -418,7 +418,7 @@ class Dragino(LoRa):
         self.txEnd=time()               # enables computation of actual TX time
         self.transmitting=False         # let callers know we are done
         self.validMsgRecvd=False        # waiting for valid downlink msg
-        self.set_mode(MODE.STDBY)
+        self.set_mode(MODE.HF_LORA_STDBY)
         self.set_dio_mapping([0, 0, 0, 0, 0, 0])
         self.set_invert_iq(1)
         self.reset_ptr_rx()
@@ -520,7 +520,7 @@ class Dragino(LoRa):
         self.write_payload(packet)
 
         self.logger.debug(f"sending packet {packet}")
-        self.set_mode(MODE.TX)
+        self.set_mode(MODE.HF_LORA_TX)
         self.transmitting=True
         self.validMsgRecvd=False
         # used to calculate air time
@@ -648,7 +648,7 @@ class Dragino(LoRa):
 
             self.transmitting=True
             self.validMsgRecvd=False
-            self.set_mode(MODE.TX)
+            self.set_mode(MODE.HF_LORA_TX)
             # used to calculate air time
             self.txStart=time()
             self.txEnd=None
