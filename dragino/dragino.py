@@ -457,7 +457,12 @@ class Dragino(LoRa):
             self.join_retries-=1
             self._tryToJoin()
 
-
+    def getFcntUp(self):
+        '''
+        returns the Fcnt for uplinks. The limit is 65535 after that the LoRaWAN code
+        will throw an error which can only be fixed by rejoining TTN
+        '''
+        return self.MAC.getFCntUp()
     def join(self):
         """
         try to join TTN

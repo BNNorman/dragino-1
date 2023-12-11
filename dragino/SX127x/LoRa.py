@@ -627,6 +627,7 @@ class LoRa(object):
         :return:
         """
         self.set_modem_config_1(bw=bw)
+        self.set_low_data_rate()
 
     def set_coding_rate(self, coding_rate):
         """ Set the coding rate 4/5, 4/6, 4/7, 4/8
@@ -659,6 +660,7 @@ class LoRa(object):
 
     def set_spreading_factor(self, spreading_factor):
         self.set_modem_config_2(spreading_factor=spreading_factor)
+        self.set_low_data_rate()
 
     def set_rx_crc(self, rx_crc):
         self.set_modem_config_2(rx_crc=rx_crc)
@@ -1051,3 +1053,26 @@ class LoRa(object):
         s += " status             %s\n" % self.get_modem_status()
         s += " version            %#02x\n" % self.get_version()
         return s
+
+    def _set_low_data_rate(self):
+        """The low data rate optimisation flag needs setting if the
+        symbol time > 16ms
+
+        called whenever sf and bw change
+
+        In the RFM95_96_98W spec sheet this is modem config3 bit 3
+        """
+        cfg1=self.get_modem_config_1()
+        cfg2=self.get_modem_config_2()
+
+        sf=cfg2["sf"]
+        bw=cfg1["bw"]
+
+        bwHz = BANDWIDTH_HZ[bw]
+        symbolTime = 1000.0 * (sf ** 2) / bwHz  # ms
+
+        if symbolTime > 16.0:
+            self.set_low_data_rate_optim(1)
+        else:
+            self.set_low_data_rate_optim(0)
+
