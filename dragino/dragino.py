@@ -463,6 +463,7 @@ class Dragino(LoRa):
         will throw an error which can only be fixed by rejoining TTN
         '''
         return self.MAC.getFCntUp()
+
     def join(self):
         """
         try to join TTN
@@ -571,8 +572,8 @@ class Dragino(LoRa):
                 return False
 
             # TTN devaddr always starts 0x26 or 0x27
-            if devaddr[0] != 0x26 and devaddr[0] != 0x27:
-                self.logger.debug(f"Invalid TTN devaddr {devaddr}, should begin with 0x26 or 0x27")
+            if not devaddr[0] in self.config[DEVADDR][VAILD_DEVADDR]:
+                self.logger.debug(f"Invalid TTN devaddr {devaddr}, should begin with [VALID_DEVADDR]")
                 return False
 
             self.logger.info("Already registered")

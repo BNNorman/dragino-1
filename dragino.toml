@@ -17,7 +17,8 @@
 [GPSD]
 	threaded=true		# non-blocking operation get_gps() will return last cached valid reading
 	threadLoopDelay=0.5	# number of seconds to check GPS for a valid reading
-
+[DEVADDR]
+	validDevAddr=[0x26,0x27] # TTN valid DevAddr start with these values, chirpstack is different 
 [TTN]
 	# uplink frequency is randomly selected
 	# warning MOST values may be modified by downlink MAC commands
