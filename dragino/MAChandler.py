@@ -174,7 +174,7 @@ class MAC_commands(object):
         try:
             return self.cache[DEVADDR]
         except:
-            return bytearray([0x00,0x00,0x00,0x00])
+            return [0x00,0x00,0x00,0x00]
     
     def setDevAddr(self,DevAddr):
         self.cache[DEVADDR]=DevAddr
