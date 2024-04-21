@@ -627,7 +627,7 @@ class LoRa(object):
         :return:
         """
         self.set_modem_config_1(bw=bw)
-        self.set_low_data_rate()
+        self._set_low_data_rate()
 
     def set_coding_rate(self, coding_rate):
         """ Set the coding rate 4/5, 4/6, 4/7, 4/8
@@ -660,7 +660,7 @@ class LoRa(object):
 
     def set_spreading_factor(self, spreading_factor):
         self.set_modem_config_2(spreading_factor=spreading_factor)
-        self.set_low_data_rate()
+        self._set_low_data_rate()
 
     def set_rx_crc(self, rx_crc):
         self.set_modem_config_2(rx_crc=rx_crc)
