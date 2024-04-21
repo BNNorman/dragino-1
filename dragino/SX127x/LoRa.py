@@ -1065,7 +1065,7 @@ class LoRa(object):
         cfg1=self.get_modem_config_1()
         cfg2=self.get_modem_config_2()
 
-        sf=cfg2["sf"]
+        sf=cfg2["spreading_factor"]
         bw=cfg1["bw"]
 
         bwHz = BANDWIDTH_HZ[bw]
