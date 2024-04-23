@@ -48,7 +48,7 @@ MAX_DUTY_CYCLE="max_duty_cycle"
 
 SF_RANGE="sf_range"
 DEVADDR="devaddr"
-VALID_DEVADDR="VALID_DEV_ADDR"
+VALID_DEVADDR="validDevAddr"
 DEVEUI="deveui"
 #NEWSKEY="newskey" spelling error
 NWKSKEY="nwkskey"
