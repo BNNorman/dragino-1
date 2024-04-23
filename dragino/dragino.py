@@ -33,6 +33,8 @@ from .Config import TomlConfig
 from .Strings import *
 import threading
 from .GPShandler import GPS
+import traceback
+
 
 # Dragino.py is called from classes in the
 # parent directory. It helps to add that to the system path
@@ -581,6 +583,7 @@ class Dragino(LoRa):
 
         except Exception as e:
             self.logger.info(f"whilst checking devaddr {devaddr} error was {e}")
+            traceback.print_exception(e)
             return False
 
     def _sendPacket(self,message,port=1):
