@@ -432,7 +432,7 @@ class Dragino(LoRa):
         # set a timer ready to switch to RX2 after rx1_delay + rx_window (normally 1 second)
         # this may not be accurate and delay may need to be slightly smaller
         delay=self.MAC.getRX1Delay()+self.config[TTN][RX_WINDOW]
-        self.logger.info("setting timer delay {delay} to switch to RX2")
+        self.logger.info(f"setting timer delay {delay} to switch to RX2")
 
         t1=threading.Timer(delay,function=self.switchToRX2)
 
