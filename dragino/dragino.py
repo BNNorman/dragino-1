@@ -435,6 +435,7 @@ class Dragino(LoRa):
         self.logger.info(f"setting timer delay {delay} to switch to RX2")
 
         t1=threading.Timer(delay,function=self.switchToRX2)
+        t1.start()
 
         # check if retries have expired
         # this will be the case for a normal packet send after joining
@@ -444,6 +445,7 @@ class Dragino(LoRa):
 
         # if we never receive a JOIN_ACCEPT we should retry
         t2=threading.Timer(self.config[TTN][JOIN_TIMEOUT],function=self._retryJoin)
+        t2.start()
 
     def _retryJoin(self):
         """
