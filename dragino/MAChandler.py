@@ -841,7 +841,7 @@ class MAC_commands(object):
         self.macReplies+=bytearray([MCMD.RX_TIMING_SETUP_REQ])
         self.macIndex+=2
 
-    def tx_param_setup_req(self, mac_payload):
+    def tx_param_setup_req(self):
         """
         payload 1 byte
         [RFU:7..6][DownlinkDwellTime:5][UplinkDwellTime:4][maxEIRP:3..0]
