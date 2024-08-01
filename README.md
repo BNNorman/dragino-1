@@ -1,3 +1,12 @@
+# WARNING
+
+This code last worked on Buster. Since Bullseye the RPi.GPIO edge detection required for catching the RFM95 DIO interrupts no longer works as a normal user.
+
+I am looking at ways to work around this.
+
+If you have a working system on Buster and need another device then I recommend cloning a working card using something like Win32DiskImager.
+
+
 # Introduction
 
 This is a clone of https://github.com/computenodes/LoRaWAN.git which ended development with the TTN V2.
