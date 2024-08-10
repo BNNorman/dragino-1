@@ -1,6 +1,6 @@
 # Installation
 
-This procedure is for Bookworm but may work on earlier OS versions provided you install PyCryptodome and pigpio. RPi.GPIO does not enable edge detection (for radio interrupts) unless you run as root.
+This procedure is for Bookworm but may work on earlier OS versions provided you install PyCryptodome and pigpio. RPi.GPIO does not enable edge detection (for radio interrupts) unless you run as root hence pigpio is now used.
 
 ## Hardware Needed
 * Raspberry Pi 4 but should work on any Pi that supports Bookworm (Not tested)
