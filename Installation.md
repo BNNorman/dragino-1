@@ -139,20 +139,18 @@ If you want to rejoin TTN simply delete cache.json before you run your program.
 1. Create a new device in The Things Network console and copy the device details into the config file `dragino.toml`
     1. edit dragino.toml and add your device keys (OTAA is preferred)
 
-7. Create a new device in The Things Network console and copy the details into the config file `dragino.toml`
-8. Run the test program 
+2. Run the test program 
 ``` 
 python testTTN.py
 ``` 
 and the device should transmit on the things network using OTAA authentication until it reaches the TTN FUP tx limit.
 
-9. run the downlink test program
+3. run the downlink test program
 ``'
-python test_downlink.py
+python testDOWNLINK.py
 ```
 
-to check downlink messages are received *after scheduling one in the TTN console first*
-
+to check downlink messages are received after scheduling one in the TTN console first
 
 # Using GPS
 
