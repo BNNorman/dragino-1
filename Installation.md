@@ -150,7 +150,7 @@ and the device should transmit on the things network using OTAA authentication u
 python testDOWNLINK.py
 ```
 
-to check downlink messages are received after scheduling one in the TTN console first
+to check downlink messages are received after scheduling one in the TTN console first 
 
 # Using GPS
 
