@@ -148,7 +148,7 @@ and the device should transmit on the things network using OTAA authentication u
 
 9. run the downlink test program
 ``'
-python test_downlink.py
+python testDOWNLINK.py
 ```
 
 to check downlink messages are received after scheduling one in the TTN console first. 
