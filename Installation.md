@@ -1,6 +1,6 @@
 # Installation
 
-This procedure is for Bookworm but may work on earlier OS versions provided you install PyCryptodome and pigpio. RPi.GPIO does not enable edge detection (for radio interrupts) unless you run as root.
+This procedure is for Bookworm but may work on earlier OS versions provided you install PyCryptodome and pigpio. RPi.GPIO does not enable edge detection (for radio interrupts) unless you run as root hence pigpio is now used.
 
 ## Hardware Needed
 * Raspberry Pi 4 but should work on any Pi that supports Bookworm (Not tested)
@@ -139,20 +139,23 @@ If you want to rejoin TTN simply delete cache.json before you run your program.
 1. Create a new device in The Things Network console and copy the device details into the config file `dragino.toml`
     1. edit dragino.toml and add your device keys (OTAA is preferred)
 
-7. Create a new device in The Things Network console and copy the details into the config file `dragino.toml`
-8. Run the test program 
+2. Run the test program 
 ``` 
 python testTTN.py
 ``` 
 and the device should transmit on the things network using OTAA authentication until it reaches the TTN FUP tx limit.
 
-9. run the downlink test program
+3. run the downlink test program
 ``'
 python testDOWNLINK.py
 ```
 
+<<<<<<< HEAD
 to check downlink messages are received after scheduling one in the TTN console first. 
 
+=======
+to check downlink messages are received after scheduling one in the TTN console first 
+>>>>>>> 8efcd580f4e7112786efccfdc3b47e28aebecf1d
 
 # Using GPS
 
