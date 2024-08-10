@@ -93,7 +93,7 @@ class Dragino(LoRa):
 
         # setup GPS
         if enableGPS:
-			from .GPShandler import GPS
+            from .GPShandler import GPS
             self.logger.info("enabling GPS")
             self.GPS=GPS(logging_level,self.config[GPSD]["threaded"],self.config[GPSD]["threadLoopDelay"])
         else:
