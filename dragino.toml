@@ -7,18 +7,18 @@
 #
 #
 # if auth_mode="OTAA":-
-# If cache.json does not exist the code will try to send a JOIN_REQUEST only if devaddr = [0x00, 0x00,x00,x00]
-# However, if cache.json exists the code will use the values therein and not try to send a JOIN_REQUEST
+# If cache.json does not exist the code will try to send a JOIN_REQUEST
+# However, if cache.json exists the code will use the values therein and not try to send a JOIN_REQUEST unless DevAddr !=[0,0,0,0]
 #
 # if auth_mode="ABP":-
-# you must provide all the TTN keys etc in the [TTN.ABP] section
+# NOT RECOMMENDED
+# you must provide all the TTN keys etc in the [TTN.ABP] section OTAA does this for you
 
 
 [GPSD]
 	threaded=true		# non-blocking operation get_gps() will return last cached valid reading
 	threadLoopDelay=0.5	# number of seconds to check GPS for a valid reading
-[DEVADDR]
-	validDevAddr=[0x26,0x27] # TTN valid DevAddr start with these values, chirpstack is different 
+
 [TTN]
 	# uplink frequency is randomly selected
 	# warning MOST values may be modified by downlink MAC commands
@@ -74,11 +74,10 @@
 	[TTN.OTAA]
 		# received session key values are stored by MAChandler
 		# enter your OTAA keys here
-		deveui = [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00]
-		appeui = [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00]
-		appkey = [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00]
+		deveui = [0x29, 0x51, 0x00, 0x00, 0xA0, 0x71, 0x00, 0x00]
+		appeui = [0x43, 0x76, 0x20, 0x49, 0xA0, 0x40, 0xC5, 0xE7]
+		appkey = [0x29, 0x51, 0x00, 0x00, 0xA0, 0x71, 0x00, 0x00, 0xD2, 0x9C, 0x45, 0xC7, 0x04, 0xD2, 0xC0, 0x72]
 		devaddr= [0x00, 0x00, 0x00, 0x00] # not joined
-		
 	[TTN.ABP]
 		# enter your device ABP key values below
 		devaddr = [0x00,0x00,0x00,0x00]

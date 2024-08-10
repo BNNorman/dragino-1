@@ -19,28 +19,36 @@
 # You should have received a copy of the GNU General Public License along with pySX127.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-#Modified 2018-01-10 Philip Basford to be compatible with the dragino LoRa HAT
-import RPi.GPIO as GPIO
-import spidev
+# Modified 2018-01-10 Philip Basford to be compatible with the dragino LoRa HAT
+# modified 2024-08-09 Brian Norman to use pigpio on Bookworm 
 
+import pigpio
+import spidev
 import time
 
-
+GPIO=pigpio.pi()
 
 class BOARD:
-    """ Board initialisation/teardown and pin configuration is kept here.
-        This is the Raspberry Pi board with a Dragino LoRa/GPS HAT
-    """
-    # Note that the BCOM numbering for the GPIOs is used.
-    RST = 11
-    DIO0 = 4   # RaspPi GPIO 4
-    DIO1 = 23   # RaspPi GPIO 23
-    DIO2 = 24   # RaspPi GPIO 24
+    """ 
+	Board initialisation/teardown and pin configuration is kept here.
+    This is the Raspberry Pi board with a Dragino LoRa/GPS HAT
+    
+    Note that the BCOM numbering for the GPIOs is used (pigpio default).
+	and that these numbers work but don't match the User Manual PDF 
+	we are using SPI channel 0 (default MOSI,MISO,SCLK)
+	but the HAT uses GPIO2 for the CS
+	
+	NOTE ALSO the PIN values below are BCM numbers which pigpio uses
+	"""
+	
+    RST = 11	# Pin 23
+    DIO0 = 4    # Pin 7 
+    DIO1 = 23   # Pin 16
+    DIO2 = 24   # Pin 18
     DIO3 = None # Not connected on dragino header
-    LED  = 18   # RaspPi GPIO 18 connects to the LED on the proto shield
-    SWITCH = 4  # RaspPi GPIO 4 connects to a switch
-    SPI_CS = 2  # Chip Select pin to use
-    # The spi object is kept here
+    SPI_CS = 2  # Pin 3 - Chip Select pin to use
+	
+    # The spi object (channel 0) is kept here
     spi = None
 
     @staticmethod
@@ -49,41 +57,31 @@ class BOARD:
         :rtype : None
         """
         print("Configuring GPIOs")
-        GPIO.setmode(GPIO.BCM)
-        # LED
-        GPIO.setup(BOARD.LED, GPIO.OUT)
-        GPIO.output(BOARD.LED, 0)
         
-        # switch
-        GPIO.setup(BOARD.SWITCH, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
         # DIOx
         for gpio_pin in [BOARD.DIO0, BOARD.DIO1, BOARD.DIO2, BOARD.DIO3]:
             if gpio_pin is not None:
-                GPIO.setup(gpio_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-        # blink 2 times to signal the board is set up
-        BOARD.blink(.1, 2)
-
+                GPIO.set_mode(gpio_pin, pigpio.INPUT)
+                GPIO.set_pull_up_down(gpio_pin,pigpio.PUD_DOWN)
+                
     @staticmethod
     def reset_radio():
         print("BOARD.reset_radio()")
         try:
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setup(BOARD.RST,GPIO.IN)
-            GPIO.setup(BOARD.RST,GPIO.OUT)
-            GPIO.output(BOARD.RST, GPIO.LOW)
+            GPIO.set_mode(BOARD.RST,pigpio.OUTPUT)
+            GPIO.write(BOARD.RST, pigpio.LOW)
             time.sleep(0.001) # must be > 100us
-            GPIO.output(BOARD.RST, GPIO.HIGH)
+            GPIO.write(BOARD.RST, pigpio.HIGH)
             time.sleep(0.01) # chip needs 5ms to reset
-            GPIO.cleanup()
-        except:
-            print("Unable to reset the RFM95")
+        except Exception as e:
+            print(f"Unable to reset the RFM95. Reason {e}")
 
     @staticmethod
     def teardown():
         """ Cleanup GPIO and SpiDev """
         print("\nClosing SPI")
         BOARD.spi.close()
-        GPIO.cleanup()
+        GPIO.stop()
 
     @staticmethod
     def SpiDev(spi_bus=0, spi_cs=SPI_CS):
@@ -105,48 +103,16 @@ class BOARD:
         :param callback: The function to call when the DIO triggers an IRQ.
         :return: None
         """
-        GPIO.add_event_detect(dio_number, GPIO.RISING, callback=callback)
+        GPIO.callback(dio_number, pigpio.RISING_EDGE, callback)
 
     @staticmethod
     def add_events(cb_dio0, cb_dio1, cb_dio2, cb_dio3, cb_dio4, cb_dio5, switch_cb=None):
         if BOARD.DIO0 is not None:
-            BOARD.add_event_detect(BOARD.DIO0, callback=cb_dio0)
+            cb0=BOARD.add_event_detect(BOARD.DIO0, callback=cb_dio0)
         if BOARD.DIO1 is not None:
-            BOARD.add_event_detect(BOARD.DIO1, callback=cb_dio1)
+            cb1=BOARD.add_event_detect(BOARD.DIO1, callback=cb_dio1)
         if BOARD.DIO2 is not None:
-            BOARD.add_event_detect(BOARD.DIO2, callback=cb_dio2)
+            cb2=BOARD.add_event_detect(BOARD.DIO2, callback=cb_dio2)
         if BOARD.DIO3 is not None:
-            BOARD.add_event_detect(BOARD.DIO3, callback=cb_dio3)
-        # the modtronix inAir9B does not expose DIO4 and DIO5
-        if switch_cb is not None:
-            GPIO.add_event_detect(BOARD.SWITCH, GPIO.RISING, callback=switch_cb, bouncetime=300)
+            cb3=BOARD.add_event_detect(BOARD.DIO3, callback=cb_dio3)
 
-    @staticmethod
-    def led_on(value=1):
-        """ Switch the proto shields LED
-        :param value: 0/1 for off/on. Default is 1.
-        :return: value
-        :rtype : int
-        """
-        GPIO.output(BOARD.LED, value)
-        return value
-
-    @staticmethod
-    def led_off():
-        """ Switch LED off
-        :return: 0
-        """
-        GPIO.output(BOARD.LED, 0)
-        return 0
-
-    @staticmethod
-    def blink(time_sec, n_blink):
-        if n_blink == 0:
-            return
-        BOARD.led_on()
-        for i in range(n_blink):
-            time.sleep(time_sec)
-            BOARD.led_off()
-            time.sleep(time_sec)
-            BOARD.led_on()
-        BOARD.led_off()

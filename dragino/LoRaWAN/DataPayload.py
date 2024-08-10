@@ -2,7 +2,16 @@
 # frm_payload: data(0..N)
 #
 from .AES_CMAC import AES_CMAC
-from Crypto.Cipher import AES
+try:
+    # no longer supported
+    from Crypto.Cipher import AES
+
+except:
+    # supported fork of pycrypto
+    from Cryptodome.Cipher import AES
+
+ENC_MODE=AES.MODE_ECB
+
 import math
 
 class DataPayload:
@@ -56,7 +65,7 @@ class DataPayload:
             a += [0x00]
             a += [i+1]
 
-        cipher = AES.new(bytes(key))
+        cipher = AES.new(bytes(key),ENC_MODE)
         s = cipher.encrypt(bytes(a))
 
         padded_payload = bytearray()
@@ -92,7 +101,7 @@ class DataPayload:
             a += [0x00]
             a += [i+1]
 
-        cipher = AES.new(bytes(key))
+        cipher = AES.new(bytes(key),ENC_MODE)
         s = cipher.encrypt(bytes(a))
         
         if type(data) is list:

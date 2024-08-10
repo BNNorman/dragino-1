@@ -26,7 +26,7 @@ import sys
 from .constants import *
 from .board_config import BOARD
 import time
-import RPi.GPIO as GPIO
+import pigpio
 
 
 ################################################## Some utility functions ##############################################
@@ -172,7 +172,8 @@ class LoRa(object):
 
     # Internal callbacks for add_events()
 
-    def _dio0(self, channel):
+    #def _dio0(self, channel):
+    def _dio0(self, gpio,level,tick):
         # DIO0 00: RxDone
         # DIO0 01: TxDone
         # DIO0 10: CadDone
@@ -185,7 +186,8 @@ class LoRa(object):
         else:
             raiseException(f"unknown dio0 mapping! {self.dio_mapping}")
 
-    def _dio1(self, channel):
+    #def _dio1(self, channel):
+    def _dio1(self, gpio,level,tick):
         # DIO1 00: RxTimeout
         # DIO1 01: FhssChangeChannel
         # DIO1 10: CadDetected
@@ -198,13 +200,15 @@ class LoRa(object):
         else:
             raiseException(f"unknown dio1 mapping! {self.dio_mapping}")
 
-    def _dio2(self, channel):
+    #def _dio2(self, channel):
+    def _dio2(self,gpio,level,tick):
         # DIO2 00: FhssChangeChannel
         # DIO2 01: FhssChangeChannel
         # DIO2 10: FhssChangeChannel
         self.on_fhss_change_channel()
 
-    def _dio3(self, channel):
+    #def _dio3(self, channel):
+    def _dio3(self, gpio,level,tick):
         # DIO3 00: CadDone
         # DIO3 01: ValidHeader
         # DIO3 10: PayloadCrcError
@@ -217,10 +221,12 @@ class LoRa(object):
         else:
             raiseException(f"unknown dio3 mapping! {self.dio_mapping}")
 
-    def _dio4(self, channel):
+    #def _dio4(self, channel):
+    def _dio4(self, gpio,level,tick):
         raiseException("DIO4 is not used")
 
-    def _dio5(self, channel):
+    #def _dio5(self, channel):
+    def _dio5(self, gpio,level,tick):
         raiseException("DIO5 is not used")
 
     # All the set/get/read/write functions

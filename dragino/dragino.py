@@ -32,7 +32,7 @@ from .MAChandler import MAC_commands
 from .Config import TomlConfig
 from .Strings import *
 import threading
-from .GPShandler import GPS
+
 import traceback
 
 
@@ -93,6 +93,7 @@ class Dragino(LoRa):
 
         # setup GPS
         if enableGPS:
+			from .GPShandler import GPS
             self.logger.info("enabling GPS")
             self.GPS=GPS(logging_level,self.config[GPSD]["threaded"],self.config[GPSD]["threadLoopDelay"])
         else:
@@ -520,6 +521,7 @@ class Dragino(LoRa):
         self.logger.debug(f"Dev eui = {deveui}")
         self.logger.debug(f"Devnonce= {self.devnonce}")
 
+
         lorawan = lorawan_msg(appkey)
 
         lorawan.create(
@@ -576,7 +578,7 @@ class Dragino(LoRa):
                 return False
 
             # TTN devaddr always starts 0x26 or 0x27
-            if not devaddr[0] in self.config[DEV_ADDR][VALID_DEVADDR]:
+            if not devaddr[0] in [0x26,0x27]:
                 self.logger.debug(f"Invalid TTN devaddr {devaddr}, should begin with [VALID_DEVADDR]")
                 return False
 

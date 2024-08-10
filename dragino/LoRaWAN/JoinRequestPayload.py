@@ -3,7 +3,13 @@
 #
 from .MalformedPacketException import MalformedPacketException
 from .AES_CMAC import AES_CMAC
-from Crypto.Cipher import AES
+try:
+    # no longer supported
+    from Crypto.Cipher import AES
+
+except:
+    # supported fork of pycrypto
+    from Cryptodome.Cipher import AES
 
 class JoinRequestPayload:
 
@@ -48,3 +54,8 @@ class JoinRequestPayload:
 
     def decrypt_payload(self, key, direction, mic):
         return self.to_raw()
+
+if __name__=="__main__":
+    jrp=JoinRequestPayload()
+    
+    

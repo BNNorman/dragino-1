@@ -1,9 +1,25 @@
-from Crypto.Cipher import AES
+try:
+    # no longer supported
+    from Crypto.Cipher import AES
+
+except:
+    # supported fork of pycrypto
+    from Cryptodome.Cipher import AES
+    
 from struct import pack, unpack
+
+# modes are 
+# 'MODE_CBC' - no
+# 'MODE_CCM', 
+# 'MODE_CFB', 
+# 'MODE_CTR', 'MODE_EAX', 
+# 'MODE_ECB', # maybe
+#'MODE_GCM', 'MODE_OCB', 'MODE_OFB', 'MODE_OPENPGP', 'MODE_SIV',
+ENC_MODE=AES.MODE_ECB # ECB generates the same MIC as the old Crypto
 
 class AES_CMAC:
     def gen_subkey(self, K):
-        AES_128 = AES.new(K)
+        AES_128 = AES.new(K, ENC_MODE)
 
         L = AES_128.encrypt(b'\x00'*16)
 
@@ -42,7 +58,7 @@ class AES_CMAC:
         const_Bsize = 16
         const_Zero  = b'\x00'*16
 
-        AES_128= AES.new(K)
+        AES_128= AES.new(K,ENC_MODE)
         K1, K2 = self.gen_subkey(K)
         n      = int(len(M)/const_Bsize)
 
