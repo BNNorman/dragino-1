@@ -21,7 +21,8 @@ sudo raspi-config
 ```
 
 3. Enable the additional CS line (The Dragino HAT doesn't use the standard chip select lines)
-    a. Change into the overlay directory 
+    a. Change into the overlay directory
+   
 	```
 		`cd dragino/overlay`
 	```	
@@ -41,15 +42,17 @@ sudo raspi-config
 		`echo "dtoverlay=spi-gpio-cs" | sudo tee -a /boot/firmware/config.txt`
 	```	
     e. Reboot the Pi
+   
     f. Check that the new cs lines are enabled 
 	```
 		`ls /dev/spidev0.*` 
 	```
 	This should output 
 	```
-	`/dev/spidev0.0  /dev/spidev0.1  /dev/spidev0.2`.  
+	/dev/spidev0.0  /dev/spidev0.1  /dev/spidev0.2
 	```
-	    In which case the required SPI CS line 0.2 now exists
+ 
+ 	In which case the required SPI CS line 0.2 now exists
 
 
 ## GPIO
@@ -136,8 +139,7 @@ If you want to rejoin TTN simply delete cache.json before you run your program.
 
 # TTN setup
 
-1. Create a new device in The Things Network console and copy the device details into the config file `dragino.toml`
-    1. edit dragino.toml and add your device keys (OTAA is preferred)
+1. Create a new device in The Things Network console and copy the device details into the config file called dragino.toml
 
 2. Run the test program 
 ``` 
@@ -146,16 +148,11 @@ python testTTN.py
 and the device should transmit on the things network using OTAA authentication until it reaches the TTN FUP tx limit.
 
 3. run the downlink test program
-``'
+
+   You must schedule a downlink in the TTN console before running this test
+```
 python testDOWNLINK.py
 ```
-
-<<<<<<< HEAD
-to check downlink messages are received after scheduling one in the TTN console first. 
-
-=======
-to check downlink messages are received after scheduling one in the TTN console first 
->>>>>>> 8efcd580f4e7112786efccfdc3b47e28aebecf1d
 
 # Using GPS
 
