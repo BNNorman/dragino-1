@@ -24,28 +24,28 @@ sudo raspi-config
     a. Change into the overlay directory
    
 	```
-		`cd dragino/overlay`
+		cd dragino/overlay
 	```	
     b. Compile the overlay  with 
 	```
-		`dtc -@ -I dts -O dtb -o spi-gpio-cs.dtbo spi-gpio-cs-overlay.dts`.
+		dtc -@ -I dts -O dtb -o spi-gpio-cs.dtbo spi-gpio-cs-overlay.dts
 	```	
 	
 	This worked without any warnings on my Pi 4
 	
     c. Copy the output file to the required folder 
 	```
-		`sudo cp spi-gpio-cs.dtbo /boot/overlays/`
+		sudo cp spi-gpio-cs.dtbo /boot/overlays/
 	```	
     d. Enable the overlay at next reboot 
 	```
-		`echo "dtoverlay=spi-gpio-cs" | sudo tee -a /boot/firmware/config.txt`
+		echo "dtoverlay=spi-gpio-cs" | sudo tee -a /boot/firmware/config.txt
 	```	
     e. Reboot the Pi
    
     f. Check that the new cs lines are enabled 
 	```
-		`ls /dev/spidev0.*` 
+		ls /dev/spidev0.* 
 	```
 	This should output 
 	```
@@ -96,20 +96,23 @@ Your login prompt will change to :-
 
 You will have to activate the venv every time you logout/in/power cycle/ before you start the dragino program.
 
-## Additional packages
+## Additional packages for SPI
 
 Now you can install the required additional packages:-
 
 ```
 pip install spidev # required to communicate with the Radio.
-pip install gps3   # required for GPS
+
 ```
 
 # GPSD
-Bookworm already includes gpsd GPS operation so you just need to enable the daemon
+
+If yusing GPS you need to install gpsd etc
 
 ```
+sudo apt install gpsd gpsd-clients
 sudo systemctl enable gpsd
+pip install gps3
 ```
 
 To check it is working run cgps. You will see a screen showing what data is being collected. Note that it could take up to a minute for the GPS to lock onto some satellites. An active antenna improves the reception A LOT.
