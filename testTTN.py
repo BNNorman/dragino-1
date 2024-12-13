@@ -35,14 +35,9 @@ base_msg="A"
 N=1000
 LOG="testTTN.log"
 
-# clear out the old log
-with open(LOG,"w") as f:
-    pass
-
-
 # add logfile
 logLevel=logging.DEBUG
-logging.basicConfig(filename=LOG, format='%(asctime)s - %(funcName)s - %(lineno)d - %(levelname)s - %(message)s', level=logLevel)
+logging.basicConfig(filename=LOG, filemode="w", format='%(asctime)s - %(funcName)s - %(lineno)d - %(levelname)s - %(message)s', level=logLevel)
 
 # disbale verbose rports from ipython system
 logging.getLogger('parso.cache').disabled=True
