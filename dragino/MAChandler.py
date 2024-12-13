@@ -492,7 +492,7 @@ class MAC_commands(object):
                 json.dump(self.cache, f)
             
         except Exception as e:
-            self.logger.info(f"Saving MAC settings failed {e}.")
+            self.logger.error(f"Saving MAC settings failed {e}.")
     
     def incrementFcntUp(self):
         """
@@ -539,7 +539,7 @@ class MAC_commands(object):
             self.logger.info("cached settings loaded ok")
             
         except Exception as e:
-            self.logger.info(f"cached settings load failed {e}. Saving current defaults")
+            self.logger.error(f"cached settings load failed {e}. Saving current defaults")
             self.saveCache()
 
     def getFOpts(self):
