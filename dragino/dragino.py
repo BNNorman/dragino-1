@@ -293,15 +293,17 @@ class Dragino(LoRa):
         FOpts & 0x0F tells us the length of any FOPTS
 
         """
+        mtype = rawPayload[0] & 0xF0
+
+        self.logger.debug("Downlink data received")
+
         try:
-            self.logger.debug("Downlink data received")
-
-            mtype=rawPayload[0] & 0xF0
-
             # check if just MAC commands
             rawPayloadLen=len(rawPayload)
 
             FOptsLen=rawPayload[5] & 0x0F
+
+            self.logger.debug(f"process_DATA_DOWN Fopts len={FOptsLen}")
 
             # message format - only FRM_PAYLOAD (if any) is encoded in MAC 1.0.x
             # parts enclosed in [] are optional. Size in bytes is enclosed in ()
@@ -310,8 +312,7 @@ class Dragino(LoRa):
             msgSize=12 + FOptsLen # excluding FPort & FRM_PAYLOAD
 
             if (rawPayloadLen-msgSize)==0:
-                self.logger.info("rawPayload does not have a FRMpayload or FPort")
-                self.MAC.processFopts(rawPayload[8:8+FOptsLen])
+                self.logger.info("rawPayload does not have a FRMpayload or FPort - ignoring")
                 return
 
             # looks like a proper downlink with data sent to me
@@ -323,17 +324,22 @@ class Dragino(LoRa):
             lorawan.read(rawPayload)
 
             decodedPayload=lorawan.get_payload() # must call before valid_mic()
-            lorawan.valid_mic()
+            lorawan.valid_mic() # raises an exception if not
 
             self.validMsgRecvd=True
 
             self.MAC.setLastSNR(self.get_pkt_snr_value()) # used for MAC status reply
 
-            if self.downlinkCallback is not None:
-                self.downlinkCallback(decodedPayload,mtype,lorawan.get_mac_payload().get_fport())
+            fport=lorawan.get_mac_payload().get_fport()
+            fOpts = lorawan.get_mac_payload().get_fhdr().get_fopts()
+
+            self.logger.debug(f"process DATADOWN validMsgRecvd fport={fport} fOpts={fOpts} FOptsLen={FOptsLen}")
 
             # finally process any MAC commands
-            self.MAC.handleCommand(lorawan.get_mac_payload())
+            self.MAC.handleCommand(lorawan.get_mac_payload()) # calls self.MAC.processFopts(fOpts)
+
+            if self.downlinkCallback is not None:
+                self.downlinkCallback(decodedPayload,mtype,fport)
 
             # we may need to ACK
             if mtype==MHDR.CONF_DATA_DOWN:
@@ -501,7 +507,6 @@ class Dragino(LoRa):
 
         return self._tryToJoin()
 
-
     def _tryToJoin(self):
         """
             Perform the OTAA auth in order to get the keys required to transmit
@@ -538,7 +543,6 @@ class Dragino(LoRa):
         # used to calculate air time
         self.txStart=time()
         self.txEnd=None
-
 
     def getDutyCycle(self,freq=None):
         """
@@ -677,7 +681,6 @@ class Dragino(LoRa):
             #self.logger.error(f"packet error {exp}")
             self.logger.exception(exp)
 
-
     def send_bytes(self, message,port=1):
         """
             Send a list of bytes over the LoRaWAN channel
@@ -691,7 +694,6 @@ class Dragino(LoRa):
             return
 
         self._sendPacket(message,port)
-
 
     def send(self, message, port=1):
         """

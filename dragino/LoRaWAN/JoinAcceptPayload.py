@@ -17,7 +17,7 @@ class JoinAcceptPayload:
 
     def read(self, payload):
         if len(payload) < 12:
-            raise MalformedPacketException("Invalid join accept");
+            raise MalformedPacketException("Invalid join accept")
         self.encrypted_payload = payload
 
     def create(self, args):

@@ -286,10 +286,16 @@ class MAC_commands(object):
         :return (freq,sf,bw)
         """
         freq=self.cache[RX2_FREQUENCY]
-        
-        sf,bw=self.config[self.frequency_plan][DATA_RATES][self.cache[RX2_DR]]
-        
-        self.logger.debug(f"rx2 settings freq {freq} sf {sf} bw {bw}")
+
+        # the RX2_DR must be within the data rates table
+        try:
+            sf,bw=self.config[self.frequency_plan][DATA_RATES][self.cache[RX2_DR]]
+            self.logger.debug(f"rx2 settings freq {freq} sf {sf} bw {bw}")
+        except Exception as e:
+            self.logger.error(f"Exception {e} getting RX2 data rate {self.cache[RX2_DR]} using default {self.config[TTN][RX2_DR]}")
+            self.cache[RX2_DR]=self.config[TTN][RX2_DR]
+            sf, bw = self.config[self.frequency_plan][DATA_RATES][self.cache[RX2_DR]]
+
         return freq,sf,bw
         
     def getMaxDutyCycle(self,freq=None):
@@ -396,13 +402,16 @@ class MAC_commands(object):
         self.logger.info("processing cfList from JOIN_ACCEPT")
         
         if cflist[-1:]!=0:
-            self.logger.info("cfList type is non-zero")
-        
+            self.logger.info(f"cfList type is non-zero {cflist[-1:]}")
+
         ch=4;
         for entry in range(5):
             # get each slice
             i=entry*3
-            self.lora_freqs[ch]=self._computeFreq(cflist[i:i+3])
+            #self.lora_freqs[ch]=self._computeFreq(cflist[i:i+3])
+            freq=self._computeFreq(cflist[i:i + 3])
+            self.cache[CHANNEL_TX_FREQS][entry] = freq # tx and RX are the same in EU
+            #self.cache[CHANNEL_RX1_FREQS][entry] = freq
             ch+=1
         
     def setCacheDefaults(self):
@@ -598,24 +607,27 @@ class MAC_commands(object):
         FCtrl=macPayload.get_fhdr().get_fctrl()
         FOptsLen=FCtrl & 0x0F
 
+        if FOptsLen==0:
+            # no MAC commands
+            self.logger.debug("handle MAC command No FOpts to process")
+            return
+
         FCnt=macPayload.get_fhdr().get_fcnt() # frame downlink frame counter
         self.logger.debug(f"received frame FCnt={FCnt} FCntDn={self.cache[FCNTDN]}")
   
         self.cache[FCNTDN]=FCnt
     
         FOpts=macPayload.get_fhdr().get_fopts()
+
+
+
         FPort=macPayload.get_fport()
         FRMpayload=macPayload.get_frm_payload()
-        self.logger.debug(f"FCtrl={FCtrl} FCnt={FCnt} FOpts={FOpts} FoptsLen={FOptsLen} FPort={FPort}")
+        self.logger.debug(f"handle MAC command FCtrl={FCtrl} FCnt={FCnt} FOpts={FOpts} FoptsLen={FOptsLen} FPort={FPort}")
 
         # mac commands may contain several commands
         # all need replying to in the order sent
         self.macReplies=bytearray()
-
-        if FOptsLen==0:
-            # no MAC commands
-            self.logger.debug("No FOpts to process")
-            return
 
         # MAC commands can appear in FOpts field or FRMpayload but not both
         
@@ -755,8 +767,13 @@ class MAC_commands(object):
             reply=reply or 0x04
             
         if reply==0x07:
+            # we have seen RX2_DR set to 14 which is longer than the [DATA_RATES] table
+            #
             self.cache[RX1_DR]+=rx1_dr_offset
-            self.cache[RX2_DR]=rx2_dr_index
+            if rx2_dr_index>len(self.config[self.frequency_plan][DATA_RATES]):
+                self.logger.warning("Attempt to set RX2 DR index beyond DATA_RATES table. Ignored")
+            else:
+                self.cache[RX2_DR]=rx2_dr_index
             self.cache[RX2_FREQUENCY]=freq
         
         # Channel ACK       0=unusable, 1 ok
